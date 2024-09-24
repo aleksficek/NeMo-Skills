@@ -18,5 +18,32 @@
 
 SANDBOX_NAME=${1:-'local-sandbox'}
 
-docker build --tag ${SANDBOX_NAME} --build-arg="UWSGI_PROCESSES=$((`nproc --all` * 10))" --build-arg="UWSGI_CHEAPER=`nproc --all`" -f dockerfiles/Dockerfile.sandbox .
-docker run --rm ${SANDBOX_NAME}
+docker build --tag=${SANDBOX_NAME} --build-arg="UWSGI_PROCESSES=$((`nproc --all` * 10))" --build-arg="UWSGI_CHEAPER=`nproc --all`" -f dockerfiles/Dockerfile.sandbox .
+docker run --network=host --rm --name=local-sandbox ${SANDBOX_NAME}
+
+
+
+
+# # # Set the sandbox name to the provided argument, defaulting to 'local-sandbox'
+# SANDBOX_NAME=${1:-'local-sandbox'}
+
+# # Build the Docker image with the necessary build arguments
+# docker build --tag=${SANDBOX_NAME} \
+#     --build-arg="UWSGI_PROCESSES=$((`nproc --all` * 10))" \
+#     --build-arg="UWSGI_CHEAPER=`nproc --all`" \
+#     -f dockerfiles/Dockerfile.sandbox .
+
+# # Initialize the Docker Swarm (only needs to be done once)
+# docker swarm init || echo "Swarm already initialized"
+
+# # Create or update the Docker service with replicas
+# docker service create --name ${SANDBOX_NAME} \
+#     --replicas 10 \
+#     --network host \
+#     --publish published=6000,target=6000 \
+#     ${SANDBOX_NAME}
+
+# Optionally, you can scale the service with the following command:
+# docker service scale ${SANDBOX_NAME}=20
+
+# docker swarm leave --force
