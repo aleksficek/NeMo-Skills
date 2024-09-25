@@ -35,16 +35,15 @@ def execute_code_subprocess(generated_code, queue):
     resource.setrlimit(resource.RLIMIT_STACK, (limit, limit))
 
     stdout_2 = StringIO()
-    stderr_2 = StringIO()
+    sys.stdout = stdout_2
 
     try:
         # Capture any stdout or stderr from exec()
         exec(generated_code, {'stdout_2': stdout_2}, {})
-        queue.put({"stdout": stdout_2.getvalue(), "stderr": ""})
+        queue.put({"stdout": stdout_2.getvalue()[:1000], "stderr": "", "trackback": ""})
     except Exception as e:
         # Capture any exception, including SyntaxError, and return it as stderr
-        stderr_2.write(f"{type(e).__name__}: {str(e)}")
-        queue.put({"stdout": stdout_2.getvalue(), "stderr": "\n".join(traceback.format_exc().split("\n")[3:])})
+        queue.put({"stdout": stdout_2.getvalue()[:1000], "stderr": f"{type(e).__name__}: {str(e)}", "trackback": "\n".join(traceback.format_exc().split("\n")[3:])})
 
 
 
@@ -59,27 +58,8 @@ def execute():
     
     if process.is_alive():  # didn't finish successfully within the timeout
         process.kill()
-        return '{"process_status": "timeout", "stdout": "Timed out", "stderr": "Timed out"}'
+        return '{"process_status": "timeout", "stdout": "TimeoutError", "stderr": "TimeoutError", "traceback": "TimeoutError"}'
     
     result = queue.get()  # Fetch the result from the subprocess
-    stdout = result.get("stdout", "")
-    stderr = result.get("stderr", "")
-    
-    return {"process_status": "completed", "stdout": stdout, "stderr": stderr}
 
-
-def execute_code_inline(generated_code):
-    sys.stdout = StringIO()
-    sys.stderr = StringIO()
-    exec(generated_code, {})
-    return {'stdout': sys.stdout.getvalue(), 'stderr': sys.stderr.getvalue()}
-
-@app.route("/execute_fast", methods=["POST"])
-def execute_fast():
-    generated_code = request.json['generated_code']
-    try:
-        result = execute_code_inline(generated_code)
-        return result
-    except Exception as e:
-        return {'stdout': str(e), 'stderr': str(e)}
-        # return str(e)
+    return {"process_status": "completed", "stdout": result.get("stdout", ""), "stderr": result.get("stderr", ""), "traceback": result.get("trackback", "")}
