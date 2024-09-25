@@ -127,7 +127,7 @@ class Sandbox(abc.ABC):
     def clear_session(self, session_id):
         del self.sessions[session_id]
 
-    @backoff.on_exception(backoff.constant, requests.exceptions.Timeout, interval=1, max_tries=4)
+    @backoff.on_exception(backoff.constant, requests.exceptions.Timeout, interval=1, max_tries=5)
     def _send_request(self, request, timeout):
         if self.ssh_server and self.ssh_key_path:
             import sshtunnel_requests
@@ -401,12 +401,12 @@ class FastLocalSandbox(LocalSandbox):
 
         request = self._prepare_request(TO_EXECUTE, timeout)
         try:
-            start = time.time()
+            # start = time.time()
             output = self._send_request(request, timeout)
             # print(f"Time taken: {time.time() - start}")
             # print("Request: ", request)
         except requests.exceptions.Timeout:
-            output = {"process_status": "timeout", "stdout": "Timed out", "stderr": "Timed out"}
+            output = {"process_status": "timeout", "stdout": "TimeoutError", "stderr": "TimeoutError"}
         # removing last state to not re-execute code with errors
         if output['stderr'] != "":
             self.sessions[session_id] = self.sessions[session_id][:-1]
