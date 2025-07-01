@@ -414,10 +414,87 @@ class PistonSandbox(Sandbox):
             "run_memory_limit": -1,
         }
 
+class FastLocalSandbox(LocalSandbox):
+    """Locally hosted sandbox."""
+
+    def execute_code(
+        self,
+        generated_code: str,
+        std_input: str = "",
+        timeout: float = 10.0,
+        max_output_characters: int = 1000,
+        session_id: Optional[str] = None,
+        language: str = 'python',
+    ) -> Tuple[Dict, str]:
+        if session_id is None:  # creating a new session with empty state
+            session_id = uuid.uuid4()
+            self.sessions[session_id] = []
+        self.sessions[session_id].append(generated_code)
+
+        request = self._prepare_request(generated_code, std_input, timeout, language)
+        try:
+            output = self._send_request(request, timeout)
+        except requests.exceptions.Timeout:
+            output = {
+                "process_status": "timeout",
+                "stdout": "TimeoutError",
+                "stderr": "TimeoutError",
+                "traceback": "TimeoutError",
+            }
+        # removing last state to not re-execute code with errors
+        if output['stderr'] != "":
+            self.sessions[session_id] = self.sessions[session_id][:-1]
+        return output, session_id
+
+    def execute_ioi_code(
+        self,
+        generated_code: str,
+        problem_id: str,
+        grader_files: List[Tuple[str, str]],
+        run_code: str,
+        compile_code: str,
+        test_input: str,
+        test_output: str,
+        timeout: float = 120.0
+    ):
+        url = f"http://{self.host}:{self.port}/execute_ioi"
+
+        request = {
+            'generated_code': generated_code,
+            'problem_id': problem_id,
+            'grader_files': grader_files,
+            'run_code': run_code,
+            'compile_code': compile_code,
+            'test_input': test_input,
+            'test_output': test_output,
+        }
+
+        if self.ssh_server and self.ssh_key_path:
+            import sshtunnel_requests
+
+            sshtunnel_request = sshtunnel_requests.from_url(f"ssh://{self.ssh_server}:22", self.ssh_key_path)
+            output = sshtunnel_request.post(
+                url=url,
+                data=json.dumps(request),
+                timeout=(timeout, timeout),
+                headers={"Content-Type": "application/json"},
+            )
+        else:
+            output = self.http_session.post(
+                url=url,
+                data=json.dumps(request),
+                timeout=(timeout, timeout),
+                headers={"Content-Type": "application/json"},
+            )
+        return self._parse_request_output(output)
+
+
+
 
 sandboxes = {
     'local': LocalSandbox,
     'piston': PistonSandbox,
+    'fast': FastLocalSandbox,
 }
 
 
