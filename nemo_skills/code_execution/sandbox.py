@@ -247,7 +247,7 @@ except Exception:
     }}
 print(json.dumps(to_return))
 """
-        elif language == 'python':
+        elif language in ["python", "pypy3", "python3"]:
             TO_EXECUTE = generated_code
             
         elif language == 'lean4':

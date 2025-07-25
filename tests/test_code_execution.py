@@ -36,7 +36,7 @@ def _get_sandbox(sandbox_type):
     return get_sandbox(sandbox_type, host=host)
 
 
-@pytest.mark.parametrize(("sandbox_type", "language"), [('local', 'python'), ('local', 'ipython'), ('piston', 'python')])
+@pytest.mark.parametrize(("sandbox_type", "language"), [('local', 'python'), ('local', 'ipython'), ('local', 'pypy3'), ('piston', 'python')])
 def test_triple_quotes(sandbox_type, language):
     sandbox = _get_sandbox(sandbox_type)
     code = '''
@@ -49,7 +49,7 @@ my_func()
     assert output == {'process_status': 'completed', 'stderr': '', 'stdout': 'asdf\n'}
 
 
-@pytest.mark.parametrize(("sandbox_type", "language"), [('local', 'python'), ('local', 'ipython'), ('piston', 'python')])
+@pytest.mark.parametrize(("sandbox_type", "language"), [('local', 'python'), ('local', 'ipython'), ('local', 'pypy3'), ('piston', 'python')])
 def test_multiple_prints(sandbox_type, language):
     sandbox = _get_sandbox(sandbox_type)
 
@@ -66,7 +66,7 @@ print("2x3")
     assert output == {'process_status': 'completed', 'stderr': '', 'stdout': '2\n15\n'}
 
 
-@pytest.mark.parametrize(("sandbox_type", "language"), [('local', 'python'), ('local', 'ipython'), ('piston', 'python')])
+@pytest.mark.parametrize(("sandbox_type", "language"), [('local', 'python'), ('local', 'ipython'), ('local', 'pypy3'), ('piston', 'python')])
 def test_no_output(sandbox_type, language):
     sandbox = _get_sandbox(sandbox_type)
 
@@ -76,7 +76,7 @@ def test_no_output(sandbox_type, language):
     assert output == {'process_status': 'completed', 'stderr': '', 'stdout': ''}
 
 
-@pytest.mark.parametrize(("sandbox_type", "language"), [('local', 'python'), ('local', 'ipython'), ('piston', 'python')])
+@pytest.mark.parametrize(("sandbox_type", "language"), [('local', 'python'), ('local', 'ipython'), ('local', 'pypy3'), ('piston', 'python')])
 def test_execution_error(sandbox_type, language):
     sandbox = _get_sandbox(sandbox_type)
 
@@ -98,7 +98,7 @@ def test_execution_error(sandbox_type, language):
         }
 
 
-@pytest.mark.parametrize(("sandbox_type", "language"), [('local', 'python'), ('local', 'ipython'), ('piston', 'python')])
+@pytest.mark.parametrize(("sandbox_type", "language"), [('local', 'python'), ('local', 'ipython'), ('local', 'pypy3'), ('piston', 'python')])
 def test_syntax_error(sandbox_type, language):
     sandbox = _get_sandbox(sandbox_type)
 
@@ -130,13 +130,13 @@ def test_timeout_error(sandbox_type, language):
     output, session_id = sandbox.execute_code(code, timeout=2, session_id=session_id, language=language)
     assert output == {'process_status': 'completed', 'stderr': '', 'stdout': 'done\n'}
 
-@pytest.mark.parametrize("sandbox_type", ['local'])
-def test_std_input(sandbox_type):
-    sandbox = _get_sandbox(sandbox_type)
+@pytest.mark.parametrize("language", ['python', 'pypy3'])
+def test_std_input(language):
+    sandbox = _get_sandbox("local")
     code = 'print(input("something "))'
     std_input = "new"
 
-    output, _ = sandbox.execute_code(code, language="python", std_input=std_input)
+    output, _ = sandbox.execute_code(code, language=language, std_input=std_input)
     assert output == {'process_status': 'completed', 'stderr': '', 'stdout': 'something new\n'}
 
 

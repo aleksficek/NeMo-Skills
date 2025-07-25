@@ -52,9 +52,9 @@ def execute_ipython(generated_code, timeout):
 
     return queue.get()
 
-def execute_python(generated_code, std_input, timeout):
+def execute_python(generated_code, std_input, timeout, language):
 
-    execution_command = ["pypy3", "-c", generated_code]
+    execution_command = [language, "-c", generated_code]
     try:
         process = subprocess.Popen(
             execution_command,
@@ -140,10 +140,10 @@ def execute():
 
     if language == 'ipython':
         return execute_ipython(generated_code, timeout)
-    elif language == 'python':
-        return execute_python(generated_code, std_input, timeout)
     elif language == 'lean4':
         return execute_lean4(generated_code, timeout)
+    else:
+        return execute_python(generated_code, std_input, timeout, language)
 
 
 if __name__ == '__main__':
