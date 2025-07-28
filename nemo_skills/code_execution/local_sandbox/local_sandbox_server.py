@@ -27,7 +27,7 @@ from flask import Flask, request
 
 app = Flask(__name__)
 
-MEM_LIMIT_BYTES = 10 * 1024 ** 3          # 10 GiB
+MEM_LIMIT_BYTES = int(os.environ.get('NEMO_SKILLS_SANDBOX_MEM_LIMIT', 10 * 1024 ** 3))  # 10 GiB default
 
 def set_limits(mem_bytes: int = MEM_LIMIT_BYTES) -> None:
     """

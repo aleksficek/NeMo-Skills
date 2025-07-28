@@ -50,23 +50,6 @@ my_func()
 
 
 @pytest.mark.parametrize(("sandbox_type", "language"), [('local', 'python'), ('local', 'ipython'), ('local', 'pypy3'), ('piston', 'python')])
-def test_multiple_prints(sandbox_type, language):
-    sandbox = _get_sandbox(sandbox_type)
-
-    code = """
-print("1")
-print("2x3")
-    """
-
-    output, _ = sandbox.execute_code(code, language=language)
-    assert output == {'process_status': 'completed', 'stderr': '', 'stdout': '1\n2x3\n'}
-
-    code = "print(2)\nprint(15)"
-    output, _ = sandbox.execute_code(code, language=language)
-    assert output == {'process_status': 'completed', 'stderr': '', 'stdout': '2\n15\n'}
-
-
-@pytest.mark.parametrize(("sandbox_type", "language"), [('local', 'python'), ('local', 'ipython'), ('local', 'pypy3'), ('piston', 'python')])
 def test_no_output(sandbox_type, language):
     sandbox = _get_sandbox(sandbox_type)
 
@@ -118,6 +101,7 @@ def test_syntax_error(sandbox_type, language):
             'stdout': '',
         }
 
+
 @pytest.mark.parametrize(("sandbox_type", "language"), [('local', 'python'), ('local', 'ipython'), ('piston', 'python')])
 def test_timeout_error(sandbox_type, language):
     sandbox = _get_sandbox(sandbox_type)
@@ -130,6 +114,7 @@ def test_timeout_error(sandbox_type, language):
     output, session_id = sandbox.execute_code(code, timeout=2, session_id=session_id, language=language)
     assert output == {'process_status': 'completed', 'stderr': '', 'stdout': 'done\n'}
 
+
 @pytest.mark.parametrize("language", ['python', 'pypy3'])
 def test_std_input(language):
     sandbox = _get_sandbox("local")
@@ -138,6 +123,43 @@ def test_std_input(language):
 
     output, _ = sandbox.execute_code(code, language=language, std_input=std_input)
     assert output == {'process_status': 'completed', 'stderr': '', 'stdout': 'something new\n'}
+
+
+@pytest.mark.parametrize("language", ['python', 'pypy3'])
+def test_multiple_prints_python(language):
+    sandbox = _get_sandbox("local")
+
+    code = """
+print("1")
+print("2x3")
+    """
+
+    output, _ = sandbox.execute_code(code, language=language)
+    assert output == {'process_status': 'completed', 'stderr': '', 'stdout': '1\n2x3\n'}
+
+    code = "print(2)\nprint(15)"
+    output, _ = sandbox.execute_code(code, language=language)
+    assert output == {'process_status': 'completed', 'stderr': '', 'stdout': '2\n15\n'}
+
+
+@pytest.mark.parametrize("sandbox_type", ['local', 'piston'])
+def test_multiple_code_blocks_ipython(sandbox_type):
+    sandbox = _get_sandbox(sandbox_type)
+
+    code = """
+    a = 1
+    a
+    """
+
+    output, session_id = sandbox.execute_code(code)
+    print(output)
+    assert output == {'process_status': 'completed', 'stderr': '', 'stdout': '1\n'}
+    assert session_id is not None
+
+    code = "a + 5"
+    output, session_id2 = sandbox.execute_code(code, session_id=session_id)
+    assert output == {'process_status': 'completed', 'stderr': '', 'stdout': '6\n'}
+    assert session_id == session_id2
 
 
 @pytest.mark.parametrize("sandbox_type", ['local', 'piston'])

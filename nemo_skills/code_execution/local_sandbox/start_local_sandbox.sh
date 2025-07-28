@@ -21,4 +21,6 @@ SANDBOX_MEMORY_LIMIT=${2:-'16g'}
 
 docker build --tag=${SANDBOX_NAME} --build-arg="UWSGI_PROCESSES=$((`nproc --all` * 10))" --build-arg="UWSGI_CHEAPER=`nproc --all`" -f dockerfiles/Dockerfile.sandbox .
 
-docker run --network=host --rm --memory=${SANDBOX_MEMORY_LIMIT} --restart unless-stopped --name=local-sandbox ${SANDBOX_NAME}
+docker run --network=host --rm --memory=${SANDBOX_MEMORY_LIMIT} --restart unless-stopped --name=local-sandbox \
+    ${NEMO_SKILLS_SANDBOX_MEM_LIMIT:+-e NEMO_SKILLS_SANDBOX_MEM_LIMIT=${NEMO_SKILLS_SANDBOX_MEM_LIMIT}} \
+    ${SANDBOX_NAME}
